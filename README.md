@@ -11,10 +11,7 @@
 
 ### 2. .Json 파일 -> .txt 파일 변환 및 test.txt, train.txt 생성 (각티슈[tissue] 예시)
 
-  .json 파일 경로: ./new_dataset/tissue/labels/3D_json <br>
-  .txt 파일 생성 경로: ./new_dataset/tissue/labels/using_data <br>
-  test.txt 경로: ./data/tissue <br>
-  train.txt 경로: ./data/tissue <br>
+  data = "tissue"
   
       python making_txtlabels.py
       
