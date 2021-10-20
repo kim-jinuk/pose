@@ -3,9 +3,11 @@ import os
 import random
 import math
 
-data = "bowl9"
-name_list = os.listdir('new_dataset/'+ data + '/labels/3D_json')
+# set your datasets
+data = "bowl9" # change datset name
+train_ratio = 0.8 # test ratio = 1 - train_ratio
 
+name_list = os.listdir('new_dataset/'+ data + '/labels/3D_json')
 for i in name_list:
     with open('new_dataset/'+ data + '/labels/3D_json/'+ i,'r') as f:
         data2 = json.load(f)
@@ -53,11 +55,8 @@ for i in name_list:
         k.write(' ')
         k.write(str(float(location['y-range'])/720))
         k.write(' ')
-            
-train_ratio = 0.8
 
 data_root = os.path.join('new_dataset', data, 'labels/using_data')
-#data_root = os.path.join('new_dataset', data, 'labels/direction')
 loader_root = os.path.join('data', data)
 
 name_list2 = os.listdir(data_root)
