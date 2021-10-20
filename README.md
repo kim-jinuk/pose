@@ -18,29 +18,28 @@
       
 ****
 
-
-### 3. 학습된 모델 테스트 (각티슈[tissue] 예시)
-
-* 공개된 학습 모델 테스트
-      
-      python valid.py --datacfg data/tissue.data --modelcfg cfg/yolo-pose.cfg --weightfile data/tissue/model.weights
-      
-* 큐브 시각화 
-      
-      python visualize.py --datacfg data/tissue.data --modelcfg cfg/yolo-pose.cfg --weightfile data/tissue/model/model.weights
-      
-      
-****
-
-
-### 4. 데이터셋 학습 (각티슈[tissue] 예시)
+### 3. 데이터셋 학습 (각티슈[tissue] 예시)
 
 * 학습할 카테고리별로 실행
  
-      python train.py --datacfg data/tissue.data --modelcfg cfg/yolo-pose.cfg --initweightfile cfg/darknet19_448.conv.23 --pretrain_num_epochs 15
+      python train.py \
+      --datacfg data/tissue.data \
+      --modelcfg cfg/yolo-pose.cfg \
+      --initweightfile cfg/darknet19_448.conv.23 \
+      --pretrain_num_epochs 15
 
 ****
 
+### 4. 학습된 모델 테스트 (각티슈[tissue] 예시)
+
+* 공개된 학습 모델 테스트
+      
+      python valid.py \
+      --datacfg data/tissue.data \
+      --modelcfg cfg/yolo-pose.cfg \
+      --weightfile data/tissue/model.weights
+      
+****
 
 
 ### 5. 참고
