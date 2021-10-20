@@ -37,10 +37,6 @@ def valid(datacfg, modelcfg, weightfile):
     backupdir = data_options['backup']
     name = data_options['name']
     gpus = data_options['gpus']
-    #fx = float(data_options['fx'])
-    #fy = float(data_options['fy'])
-    #u0 = float(data_options['u0'])
-    #v0 = float(data_options['v0'])
     im_width = int(data_options['width'])
     im_height = int(data_options['height'])
     if not os.path.exists(backupdir):
@@ -50,8 +46,7 @@ def valid(datacfg, modelcfg, weightfile):
     seed = int(time.time())
     os.environ['CUDA_VISIBLE_DEVICES'] = gpus
     torch.cuda.manual_seed(seed)
-    save = False
-    visualize = True
+    save = True
     testtime = True
     num_classes = 1
     testing_samples = 0.0
@@ -60,6 +55,7 @@ def valid(datacfg, modelcfg, weightfile):
         makedirs(backupdir + '/test')
         makedirs(backupdir + '/test/gt')
         makedirs(backupdir + '/test/pr')
+        makedirs(backupdir + '/test/images')
     # To save
     testing_error_trans = 0.0
     testing_error_angle = 0.0
@@ -118,7 +114,6 @@ def valid(datacfg, modelcfg, weightfile):
     logging("   Number of test samples: %d" % len(test_loader.dataset))
     # Iterate through test batches (Batch size for test data is 1)
     count = 0
-    idx = 0
     for batch_idx, (data, target) in enumerate(test_loader):
         with open(test_loader.dataset.lines[batch_idx].replace('origin','labels').replace('Images','3D_json').replace('.png','.json').replace('\n','')) as f:
             abcde = json.load(f)
@@ -167,19 +162,6 @@ def valid(datacfg, modelcfg, weightfile):
                 corners2D_gt[:, 1] = corners2D_gt[:, 1] * im_height
                 corners2D_pr[:, 0] = corners2D_pr[:, 0] * im_width
                 corners2D_pr[:, 1] = corners2D_pr[:, 1] * im_height
-                if visualize:
-                    # Visualize
-                    plt.xlim((0, im_width))
-                    plt.ylim((0, im_height))
-                    plt.imshow(scipy.misc.imresize(img, (im_height, im_width)))
-                    # # Projections
-                    for i in range(len(corners2D_gt)):
-                        plt.plot(corners2D_gt.transpose()[0], corners2D_gt.transpose()[1], 'o', color='g')
-                        plt.plot(corners2D_pr.transpose()[0], corners2D_pr.transpose()[1], 'o', color='b')
-                    plt.gca().invert_yaxis()
-                    #plt.show()
-                    plt.savefig('prediction/sause_container13/point/test_{}.png'.format(idx))
-                    plt.clf()
                 preds_corners2D.append(corners2D_pr)
                 gts_corners2D.append(corners2D_gt)
 
@@ -215,7 +197,7 @@ def valid(datacfg, modelcfg, weightfile):
                 pixel_dist = np.mean(norm)
                 errs_2d.append(pixel_dist)
                 
-                if visualize:
+                if save:
                     # Visualize
                     plt.xlim((0, im_width))
                     plt.ylim((0, im_height))
@@ -226,10 +208,8 @@ def valid(datacfg, modelcfg, weightfile):
                         plt.plot(proj_corners_pr[edge, 0], proj_corners_pr[edge, 1], color='b', linewidth=1.0)
                     plt.gca().invert_yaxis()
                     #plt.show()
-                    plt.savefig('prediction/sause_container13/pnp/test_{}.png'.format(idx))
+                    plt.savefig(backupdir + '/test/images/' + valid_files[count][-8:-3] + '.png')
                     plt.clf()
-                idx += 1 
-                print(idx)
                 # Compute 3D distances
                 transform_3d_gt = compute_transformation(vertices, Rt_gt)
                 transform_3d_pred = compute_transformation(vertices, Rt_pr)
@@ -265,7 +245,7 @@ def valid(datacfg, modelcfg, weightfile):
         t5 = time.time()
 
     # Compute 2D projection error, 6D pose error, 5cm5degree error
-    px_threshold = 10  # 5 pixel threshold for 2D reprojection error is standard in recent sota 6D object pose estimation works
+    px_threshold = 10  # 10 pixel threshold for 2D reprojection error is standard in recent sota 6D object pose estimation works
     eps = 1e-5
     acc = len(np.where(np.array(errs_2d) <= px_threshold)[0]) * 100. / (len(errs_2d) + eps)
     acc5cm5deg = len(np.where((np.array(errs_trans) <= 0.05) & (np.array(errs_angle) <= 5))[0]) * 100. / (
