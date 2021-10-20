@@ -9,6 +9,7 @@
 
 ****
 
+
 ### 2. .Json 파일 -> .txt 파일 변환 및 test.txt, train.txt 생성 (각티슈[tissue] 예시)
 
   6. data = "tissue" <br>
@@ -16,6 +17,7 @@
       python making_txtlabels.py
       
 ****
+
 
 ### 3. 학습된 모델 테스트 (각티슈[tissue] 예시)
 
@@ -29,6 +31,7 @@
       
       
 ****
+
 
 ### 4. 데이터셋 학습 (각티슈[tissue] 예시)
 
