@@ -286,7 +286,6 @@ if __name__ == '__main__':
 
     # Parse configuration files
     parser = argparse.ArgumentParser(description='SingleShotPose')
-    #parser.add_argument('--datacfg', type=str, default='cfg/ape.data') # data config
     parser.add_argument('--datacfg', type=str, default='data/sause_container13/sause_container13.data') # data config
     parser.add_argument('--modelcfg', type=str, default='cfg/yolo-pose.cfg') # network config
     parser.add_argument('--weightfile', type=str, default='data/ape/model/model_backup.weights') # imagenet initialized weights
