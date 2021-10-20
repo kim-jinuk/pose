@@ -14,7 +14,6 @@
 
   * data = "tissue"
   
-      python train.py \
       python making_txtlabels.py
       
 ****
