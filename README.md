@@ -32,6 +32,20 @@
 
 ### 4. .Json 파일 -> .txt 파일 변환 (각티슈[tissue] 예시)
 
+  .json 파일 경로: ./new_dataset/tissue/labels/3D_json
+  .txt 파일 생성 경로: ./new_dataset/tissue/labels/using_data
+
+      python making_txtlabels.py
+      
+****
+
+### 5. Training : Test = 8 : 2 데이터셋 분할 (각티슈[tissue] 예시)
+
+  * making_txtlabels.py 실행하여 .txt 파일 생성 후 실행
+
+      python dataset_seperate.py
+      
+****
 
 ### 5. 참고
 
@@ -40,13 +54,3 @@
       https://www.dropbox.com/s/lvmr4ssdyo2ham3/singleshotpose-master.zip?dl=0
       
 <br>
-
-* 00d3119 (on 21 Oct 2019)에서 수정한 부분 <br>
- 
---> utils.py <br>
-  201. Convexhull IoU 계산을 위한 함수 추가 <br>
-
---> making_txtlabels.py <br>
-  .Json 파일의 x1,y1 ~ x9,y9 값 -> .txt파일 형식 변환
-  
-      
