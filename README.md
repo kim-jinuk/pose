@@ -11,7 +11,7 @@
 
 ### 2. .Json 파일 -> .txt 파일 변환 및 test.txt, train.txt 생성 (각티슈[tissue] 예시)
 
-  data = "tissue"
+  6. data = "tissue" <br>
   
       python making_txtlabels.py
       
