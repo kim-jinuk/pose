@@ -27,10 +27,6 @@ def valid(datacfg, modelcfg, weightfile):
     backupdir    = data_options['backup']
     name         = data_options['name']
     gpus         = data_options['gpus'] 
-    #fx           = float(data_options['fx'])
-    #fy           = float(data_options['fy'])
-    #u0           = float(data_options['u0'])
-    #v0           = float(data_options['v0'])
     im_width     = int(data_options['width'])
     im_height    = int(data_options['height'])
     if not os.path.exists(backupdir):
@@ -40,14 +36,16 @@ def valid(datacfg, modelcfg, weightfile):
     seed = int(time.time())
     os.environ['CUDA_VISIBLE_DEVICES'] = gpus
     torch.cuda.manual_seed(seed)
-    save            = False
+    save            = True
     testtime        = True
     num_classes     = 1
     testing_samples = 0.0
+    edges_corners = [[0, 1], [0, 2], [0, 4], [1, 3], [1, 5], [2, 3], [2, 6], [3, 7], [4, 5], [4, 6], [5, 7], [6, 7]]
     if save:
         makedirs(backupdir + '/test')
         makedirs(backupdir + '/test/gt')
         makedirs(backupdir + '/test/pr')
+        makedirs(backupdir + '/test/images')
 
     # To save
     testing_error_trans = 0.0
@@ -65,7 +63,7 @@ def valid(datacfg, modelcfg, weightfile):
     gts_trans           = []
     gts_rot             = []
     gts_corners2D       = []
-    #internal_calibration = get_camera_intrinsic(fx, fy, u0, v0)
+    
     # Read object model information, get 3D bounding box corners
     mesh      = MeshPly(meshname)
     vertices  = np.c_[np.array(mesh.vertices), np.ones((len(mesh.vertices), 1))].transpose()
@@ -75,9 +73,6 @@ def valid(datacfg, modelcfg, weightfile):
     except:
         diam  = calc_pts_diameter(np.array(mesh.vertices))
         
-    # Read intrinsic camera parameters
-    #intrinsic_calibration = get_camera_intrinsic(u0, v0, fx, fy)
-
     # Get validation file names
     with open(valid_images) as fp:
         tmp_files = fp.readlines()
@@ -110,18 +105,18 @@ def valid(datacfg, modelcfg, weightfile):
     count = 0
     for batch_idx, (data, target) in enumerate(test_loader):
         with open(test_loader.dataset.lines[batch_idx].replace('origin','labels').replace('Images','3D_json').replace('.png','.json').replace('\n','')) as f:
-            abcde = json.load(f)
-            fx = float(abcde['metaData']['Fx'])
-            fy = float(abcde['metaData']['Fy'])
-            u0 = float(abcde['metaData']['PPx'])
-            v0 = float(abcde['metaData']['PPy'])
+            label_info = json.load(f)
+            # Read intrinsic camera parameters
+            fx = float(label_info['metaData']['Fx'])
+            fy = float(label_info['metaData']['Fy'])
+            u0 = float(label_info['metaData']['PPx'])
+            v0 = float(label_info['metaData']['PPy'])
             internal_calibration = get_camera_intrinsic(fx,fy,u0,v0)
         t1 = time.time()
         # Pass data to GPU
         data = data.cuda()
         target = target.cuda()
         # Wrap tensors in Variable class, set volatile=True for inference mode and to use minimal memory during inference
-        #data = Variable(data, volatile=True)
         with torch.no_grad():
             data = data
         
@@ -129,7 +124,7 @@ def valid(datacfg, modelcfg, weightfile):
         # Forward pass
         output = model(data).data  
         t3 = time.time()
-        # Using confidence threshold, eliminate low-confidence predictions
+        # eliminate low-confidence predictions
         all_boxes = get_region_boxes(output, num_classes, num_keypoints)        
         t4 = time.time()
         # Evaluation
@@ -138,7 +133,7 @@ def valid(datacfg, modelcfg, weightfile):
             # For each image, get all the targets (for multiple object pose estimation, there might be more than 1 target per image)
             truths = target.view(-1, num_labels)
             # Get how many objects are present in the scene
-            num_gts    = truths_length(truths)
+            num_gts = truths_length(truths)
             # Iterate through each ground-truth object
             for k in range(num_gts):
                 box_gt = list()
@@ -186,6 +181,21 @@ def valid(datacfg, modelcfg, weightfile):
                 norm         = np.linalg.norm(proj_2d_gt - proj_2d_pred, axis=0)
                 pixel_dist   = np.mean(norm)
                 errs_2d.append(pixel_dist)
+                
+                # save prediction image
+                if save:
+                    # Visualize
+                    plt.xlim((0, im_width))
+                    plt.ylim((0, im_height))
+                    plt.imshow(scipy.misc.imresize(img, (im_height, im_width)))
+                    # # Projections
+                    for edge in edges_corners:
+                        plt.plot(proj_corners_gt[edge, 0], proj_corners_gt[edge, 1], color='g', linewidth=1.0)
+                        plt.plot(proj_corners_pr[edge, 0], proj_corners_pr[edge, 1], color='b', linewidth=1.0)
+                    plt.gca().invert_yaxis()
+                    #plt.show()
+                    plt.savefig(backupdir + '/test/images/' + valid_files[count][-8:-3] + '.png')
+                    plt.clf()
 
                 # Compute 3D distances
                 transform_3d_gt   = compute_transformation(vertices, Rt_gt) 
@@ -200,7 +210,6 @@ def valid(datacfg, modelcfg, weightfile):
                 testing_error_pixel  += pixel_dist
                 testing_samples      += 1
                 
-
                 if save:
                     preds_trans.append(t_pr)
                     gts_trans.append(t_gt)
