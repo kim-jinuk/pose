@@ -105,6 +105,11 @@ def valid(datacfg, modelcfg, weightfile):
     logging("   Number of test samples: %d" % len(test_loader.dataset))
     # Iterate through test batches (Batch size for test data is 1)
     count = 0
+    # save experiment resuls as CSV format
+    class_name = test_loader.dataset.lines[0].split('/')[-1].split('_')[0]
+    makedirs('experimental_results')
+    c = open('experimental_results/'+class_name+'.csv', 'w', encoding="UTF-8")
+    c.write('Data ID, x0-GT, y0-GT, x1-GT, y1-GT, x2-GT, y2-GT, x3-GT, y3-GT, x4-GT, y4-GT, x5-GT, y5-GT, x6-GT, y6-GT, x7-GT, y7-GT, x8-GT, y8-GT, x0-predict, y0-predict, x1-predict, y1-predict, x2-predict, y2-predict, x3-predict, y3-predict, x4-predict, y4-predict, x5-predict, y5-predict, x6-predict, y6-predict, x7-predict, y7-predict, x8-predict, y8-predict, pixel error, 2D projection, IoU, IoU score, \n')
     for batch_idx, (data, target) in enumerate(test_loader):
         with open(test_loader.dataset.lines[batch_idx].replace('origin', 'labels').replace('Images', '3D_json').replace('.png', '.json').replace('\n', ''), encoding='UTF-8') as f:
             label_info = json.load(f)
@@ -114,6 +119,7 @@ def valid(datacfg, modelcfg, weightfile):
             u0 = float(label_info['metaData']['PPx'])
             v0 = float(label_info['metaData']['PPy'])
             internal_calibration = get_camera_intrinsic(fx, fy, u0, v0)
+        data_id = test_loader.dataset.lines[batch_idx].split('/')[-1][:-8]
         # Images
         img = data[0, :, :, :]
         img = img.numpy().squeeze()
@@ -158,7 +164,15 @@ def valid(datacfg, modelcfg, weightfile):
                 corners2D_pr[:, 1] = corners2D_pr[:, 1] * im_height
                 preds_corners2D.append(corners2D_pr)
                 gts_corners2D.append(corners2D_gt)
-
+                # CSV write gt, predict
+                gt = ''
+                for i in range(9):
+                    gt += '{:.1f},'.format(corners2D_gt[i][0])
+                    gt += '{:.1f},'.format(corners2D_gt[i][1])
+                predict = ''
+                for i in range(9):
+                    predict += '{:.1f},'.format(corners2D_pr[i][0])
+                    predict += '{:.1f},'.format(corners2D_pr[i][1])
                 # Compute IOU
                 iou = compute_convexhull_iou(corners2D_gt, corners2D_pr)
                 iou_acc.append(iou)
@@ -195,7 +209,10 @@ def valid(datacfg, modelcfg, weightfile):
                 norm = np.linalg.norm(proj_2d_gt - proj_2d_pred, axis=0)
                 pixel_dist = np.mean(norm)
                 errs_2d.append(pixel_dist)
-
+                
+                # csv write
+                context = data_id + ',' + gt + predict + '{:.2f}, {}, {:.2f}, {}\n'.format(pixel_dist, pixel_dist <= 20, iou, iou>=0.5)
+                c.write(context)
                 # save prediction image
                 if save:
                     # Visualize
